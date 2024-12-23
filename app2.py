@@ -1,6 +1,7 @@
 # Import necessary libraries
 import streamlit as st
 import pandas as pd
+import numpy as np  # Ensure numpy is correctly imported
 import joblib
 from sklearn.preprocessing import PolynomialFeatures
 
@@ -9,14 +10,6 @@ model = joblib.load("xgb_model.pkl")
 
 # Load the location mean price per cent map
 location_mean_price_per_cent = joblib.load("location_mean_price.pkl")
-
-# Ensure the location_mean_price_per_cent is a dictionary
-if isinstance(location_mean_price_per_cent, dict):
-    mean_price_default = sum(location_mean_price_per_cent.values()) / len(location_mean_price_per_cent)
-else:
-    # Convert to dictionary if it's a numpy array or similar
-    location_mean_price_per_cent = {str(i): val for i, val in enumerate(location_mean_price_per_cent)}
-    mean_price_default = sum(location_mean_price_per_cent.values()) / len(location_mean_price_per_cent)
 
 # Initialize polynomial features (ensure it matches the training configuration)
 poly = PolynomialFeatures(degree=2, interaction_only=False, include_bias=False)
@@ -37,7 +30,10 @@ location = st.sidebar.selectbox(
 )
 
 # Prepare input data
-mean_price_per_cent = location_mean_price_per_cent.get(location, mean_price_default)
+mean_price_per_cent = location_mean_price_per_cent.get(
+    location,
+    np.mean(list(location_mean_price_per_cent.values()))  # Explicitly call numpy.mean
+)
 
 input_data = {
     'Build__Area': build_area,
