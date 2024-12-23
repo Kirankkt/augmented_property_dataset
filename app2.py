@@ -10,6 +10,14 @@ model = joblib.load("xgb_model.pkl")
 # Load the location mean price per cent map
 location_mean_price_per_cent = joblib.load("location_mean_price.pkl")
 
+# Ensure the location_mean_price_per_cent is a dictionary
+if isinstance(location_mean_price_per_cent, dict):
+    mean_price_default = sum(location_mean_price_per_cent.values()) / len(location_mean_price_per_cent)
+else:
+    # Convert to dictionary if it's a numpy array or similar
+    location_mean_price_per_cent = {str(i): val for i, val in enumerate(location_mean_price_per_cent)}
+    mean_price_default = sum(location_mean_price_per_cent.values()) / len(location_mean_price_per_cent)
+
 # Initialize polynomial features (ensure it matches the training configuration)
 poly = PolynomialFeatures(degree=2, interaction_only=False, include_bias=False)
 poly_feature_names = joblib.load("poly_feature_names.pkl")
@@ -29,10 +37,7 @@ location = st.sidebar.selectbox(
 )
 
 # Prepare input data
-mean_price_per_cent = location_mean_price_per_cent.get(
-    location,
-    sum(location_mean_price_per_cent.values()) / len(location_mean_price_per_cent)  # Using Python's built-in mean calculation
-)
+mean_price_per_cent = location_mean_price_per_cent.get(location, mean_price_default)
 
 input_data = {
     'Build__Area': build_area,
