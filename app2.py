@@ -4,7 +4,7 @@ import streamlit as st
 import joblib
 
 # Load the pre-trained model
-model = joblib.load("xgb_model(1).pkl")  # Replace with your .pkl file path
+model = joblib.load("xgb_model (1).pkl")  # Replace with your .pkl file path
 
 # Load the dataset dynamically to calculate mean price per cent
 data_path = "Updated_Cleaned_Dataset (1).csv"  # Replace with your dataset path
