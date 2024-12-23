@@ -1,53 +1,74 @@
-# Import necessary libraries
-import streamlit as st
 import pandas as pd
+import numpy as np
+import streamlit as st
 import joblib
-from sklearn.preprocessing import PolynomialFeatures
 
 # Load the pre-trained model
-model = joblib.load("xgb_model.pkl")
+model = joblib.load("xgb_model.pkl")  # Replace with your .pkl file path
 
-# Streamlit app title
-st.title("Plot Price Prediction")
+# Load the dataset dynamically to calculate mean price per cent
+data_path = "Updated_Cleaned_Dataset (1).csv"  # Replace with your dataset path
+dataset = pd.read_csv(data_path)
 
-# User inputs
-st.sidebar.header("Input Features")
-build_area = st.sidebar.number_input("Build Area (sqft)", min_value=500, max_value=10000, step=50, value=1500)
-plot_area_cents = st.sidebar.number_input("Plot Area (cents)", min_value=1, max_value=100, step=1, value=5)
-bedrooms = st.sidebar.slider("Number of Bedrooms", min_value=1, max_value=10, value=3)
-location = st.sidebar.text_input("Enter Location (e.g., kazhakkoottam)", value="kazhakkoottam")
+# Calculate mean price per cent dynamically
+dataset['Mean_Price_Per_Cent'] = dataset.groupby('Standardized_Location_Name')['Price_per_cent'].transform('mean')
+location_mean_price_per_cent = dataset.groupby('Standardized_Location_Name')['Price_per_cent'].mean().to_dict()
 
-# Load training data mean price per cent information (calculated during training)
-training_data = pd.read_csv("Updated_Cleaned_Dataset (1).csv")
-location_mean_price_per_cent = training_data.groupby("Standardized_Location_Name")["Price_per_cent"].mean()
+# PolynomialFeatures setup
+numerical_features = ['Build__Area', 'Total_Area', 'Mean_Price_Per_Cent']
+poly_feature_names = [
+    'Build__Area', 'Total_Area', 'Mean_Price_Per_Cent',
+    'Build__Area^2', 'Build__Area Total_Area', 'Build__Area Mean_Price_Per_Cent',
+    'Total_Area^2', 'Total_Area Mean_Price_Per_Cent', 'Mean_Price_Per_Cent^2'
+]
 
-# Calculate Mean Price Per Cent for input location dynamically
-mean_price_per_cent = location_mean_price_per_cent.get(location.lower(), location_mean_price_per_cent.mean())
+# Function to predict price
+def predict_price(build_area, plot_area_cents, bedrooms, location):
+    mean_price_per_cent = location_mean_price_per_cent.get(location, np.mean(list(location_mean_price_per_cent.values())))
+    total_area = build_area + (plot_area_cents * 435.6)  # Approximate conversion from cents to sq ft
 
-# Prepare input data for prediction
-total_area = build_area + (plot_area_cents * 435.6)  # Approximate conversion from cents to sqft
+    input_data = {
+        'Build__Area': build_area,
+        'Total_Area': total_area,
+        'Mean_Price_Per_Cent': mean_price_per_cent,
+    }
 
-# Constructing features (matching training setup)
-input_data = pd.DataFrame([{
-    "Build__Area": build_area,
-    "Total_Area": total_area,
-    "Mean_Price_Per_Cent": mean_price_per_cent,
-    "Location": location.lower()
-}])
+    # Simulate PolynomialFeatures transformation
+    input_poly = [
+        input_data['Build__Area'],
+        input_data['Total_Area'],
+        input_data['Mean_Price_Per_Cent'],
+        input_data['Build__Area'] ** 2,
+        input_data['Build__Area'] * input_data['Total_Area'],
+        input_data['Build__Area'] * input_data['Mean_Price_Per_Cent'],
+        input_data['Total_Area'] ** 2,
+        input_data['Total_Area'] * input_data['Mean_Price_Per_Cent'],
+        input_data['Mean_Price_Per_Cent'] ** 2
+    ]
 
-# Generate polynomial features
-poly = PolynomialFeatures(degree=2, interaction_only=False, include_bias=False)
-numerical_features = input_data[["Build__Area", "Total_Area", "Mean_Price_Per_Cent"]]
-poly_features = poly.fit_transform(numerical_features)
+    input_df = pd.DataFrame([input_poly], columns=poly_feature_names)
 
-# Combine polynomial features with location encoding (dummy variables)
-location_dummies = pd.get_dummies([location.lower()], drop_first=True)
-poly_feature_names = poly.get_feature_names_out(["Build__Area", "Total_Area", "Mean_Price_Per_Cent"])
-poly_df = pd.DataFrame(poly_features, columns=poly_feature_names)
-final_input = pd.concat([poly_df, location_dummies], axis=1).reindex(columns=model.feature_names_in_, fill_value=0)
+    # Simulate one-hot encoding for location
+    location_dummies = pd.DataFrame([{loc: 1 if loc == location else 0 for loc in location_mean_price_per_cent.keys()}])
 
-# Make prediction
-predicted_price = model.predict(final_input)[0]
+    # Combine all inputs
+    full_input = pd.concat([input_df, location_dummies], axis=1)
+    full_input = full_input.reindex(columns=poly_feature_names + list(location_mean_price_per_cent.keys()), fill_value=0)
 
-# Display result
-st.write(f"### Predicted Plot Price: ₹{predicted_price:,.2f}")
+    # Predict using the model
+    return model.predict(full_input)[0]
+
+# Streamlit App
+st.title("Real Estate Price Predictor")
+st.write("Predict the price of a plot based on various features.")
+
+# User Inputs
+build_area = st.number_input("Enter Build Area (sq ft):", min_value=500, step=50)
+plot_area_cents = st.number_input("Enter Plot Area (cents):", min_value=1, step=1)
+bedrooms = st.number_input("Enter Bedroom Count:", min_value=1, step=1)
+location = st.selectbox("Select Location:", list(location_mean_price_per_cent.keys()))
+
+# Prediction
+if st.button("Predict Price"):
+    price = predict_price(build_area, plot_area_cents, bedrooms, location)
+    st.write(f"### Predicted Price: ₹{price:,.2f}")
