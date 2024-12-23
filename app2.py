@@ -5,6 +5,9 @@ import numpy as np  # Ensure numpy is correctly imported
 import joblib
 from sklearn.preprocessing import PolynomialFeatures
 
+# Debugging: Check the type of np.mean
+st.write("Type of np.mean before loading models:", type(np.mean))
+
 # Load the pre-trained model
 model = joblib.load("xgb_model.pkl")
 
