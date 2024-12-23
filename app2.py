@@ -30,12 +30,16 @@ location = st.sidebar.selectbox(
 )
 
 # Prepare input data
-mean_price_per_cent = location_mean_price_per_cent.get(location, np.mean(list(location_mean_price_per_cent.values())))
+mean_price_per_cent = location_mean_price_per_cent.get(
+    location,
+    np.mean(list(location_mean_price_per_cent.values()))  # Explicitly call numpy.mean
+)
 input_data = {
     'Build__Area': build_area,
     'Total_Area': build_area + (plot_area_cents * 435.6),  # Approximate conversion from cents to sqft
     'Mean_Price_Per_Cent': mean_price_per_cent,
 }
+
 input_poly = poly.transform([list(input_data.values())])
 input_df = pd.DataFrame(input_poly, columns=poly_feature_names)
 
