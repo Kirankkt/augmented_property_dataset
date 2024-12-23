@@ -1,7 +1,6 @@
 # Import necessary libraries
 import streamlit as st
 import pandas as pd
-import numpy as np  # Ensure numpy is correctly imported
 import joblib
 from sklearn.preprocessing import PolynomialFeatures
 
@@ -32,7 +31,7 @@ location = st.sidebar.selectbox(
 # Prepare input data
 mean_price_per_cent = location_mean_price_per_cent.get(
     location,
-    np.mean(list(location_mean_price_per_cent.values()))  # Explicitly call numpy.mean
+    sum(location_mean_price_per_cent.values()) / len(location_mean_price_per_cent)  # Using Python's built-in mean calculation
 )
 
 input_data = {
