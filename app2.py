@@ -84,5 +84,6 @@ if st.button("Predict Price"):
     plot_count = location_plot_counts.get(location, 0)
     
     st.write(f"### Predicted Price: {formatted_price}")
-    st.write(f"Mean Price per Cent for '{location}': ₹{mean_price_per_cent:,.2f}")
+    format_mean_price=format_price_indian(mean_price_per_cent)
+    st.write(f"Mean Price per Cent for '{location}': ₹{format_mean_price:,.2f}")
     st.write(f"Number of plots available in '{location}': {plot_count}")
