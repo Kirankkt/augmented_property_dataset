@@ -24,16 +24,15 @@ poly_feature_names = [
     'Total_Area^2', 'Total_Area Mean_Price_Per_Cent', 'Mean_Price_Per_Cent^2'
 ]
 
-# Function to format price in Indian terms
+# Function to format price in Indian numbering system
 def format_price_indian(price):
-    price_str = f"{price:,.2f}"
-    parts = price_str.split(",")
-    if len(parts) > 2:
-        parts[1] = parts[0][-2:] + "," + parts[1]  # Combine last two digits of the first group with the second group
-        parts[0] = parts[0][:-2]
-        if parts[0] == "":
-            parts.pop(0)
-    return "₹" + ",".join(parts)
+    price_int = int(price)
+    if price_int >= 1_00_00_000:  # If price is in crores
+        return f"₹{price_int // 1_00_00_000} Cr {price_int % 1_00_00_000 // 1_00_000} L"
+    elif price_int >= 1_00_000:  # If price is in lakhs
+        return f"₹{price_int // 1_00_000} L {price_int % 1_00_000 // 1_000} K"
+    else:  # For smaller amounts
+        return f"₹{price_int // 1_000} K {price_int % 1_000}"
 
 # Function to predict price
 def predict_price(build_area, plot_area_cents, bedrooms, location):
