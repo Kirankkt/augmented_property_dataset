@@ -14,6 +14,7 @@ dataset = pd.read_csv(data_path)
 # Calculate mean price per cent dynamically
 dataset['Mean_Price_Per_Cent'] = dataset.groupby('Standardized_Location_Name')['Price_per_cent'].transform('mean')
 location_mean_price_per_cent = dataset.groupby('Standardized_Location_Name')['Price_per_cent'].mean().to_dict()
+location_plot_counts = dataset['Standardized_Location_Name'].value_counts().to_dict()
 
 # PolynomialFeatures setup (columns must match the training pipeline)
 numerical_features = ['Build__Area', 'Total_Area', 'Mean_Price_Per_Cent']
@@ -22,6 +23,17 @@ poly_feature_names = [
     'Build__Area^2', 'Build__Area Total_Area', 'Build__Area Mean_Price_Per_Cent',
     'Total_Area^2', 'Total_Area Mean_Price_Per_Cent', 'Mean_Price_Per_Cent^2'
 ]
+
+# Function to format price in Indian terms
+def format_price_indian(price):
+    price_str = f"{price:,.2f}"
+    parts = price_str.split(",")
+    if len(parts) > 2:
+        parts[1] = parts[0][-2:] + "," + parts[1]  # Combine last two digits of the first group with the second group
+        parts[0] = parts[0][:-2]
+        if parts[0] == "":
+            parts.pop(0)
+    return "₹" + ",".join(parts)
 
 # Function to predict price
 def predict_price(build_area, plot_area_cents, bedrooms, location):
@@ -59,7 +71,7 @@ def predict_price(build_area, plot_area_cents, bedrooms, location):
     full_input = full_input.reindex(columns=feature_names, fill_value=0)
 
     # Predict using the model
-    return model.predict(full_input)[0]
+    return model.predict(full_input)[0], mean_price_per_cent
 
 # Streamlit App
 st.title("Real Estate Price Predictor")
@@ -73,5 +85,10 @@ location = st.selectbox("Select Location:", sorted(location_mean_price_per_cent.
 
 # Prediction
 if st.button("Predict Price"):
-    price = predict_price(build_area, plot_area_cents, bedrooms, location)
-    st.write(f"### Predicted Price: ₹{price:,.2f}")
+    price, mean_price_per_cent = predict_price(build_area, plot_area_cents, bedrooms, location)
+    formatted_price = format_price_indian(price)
+    plot_count = location_plot_counts.get(location, 0)
+    
+    st.write(f"### Predicted Price: {formatted_price}")
+    st.write(f"Mean Price per Cent for '{location}': ₹{mean_price_per_cent:,.2f}")
+    st.write(f"Number of plots available in '{location}': {plot_count}")
