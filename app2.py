@@ -85,5 +85,5 @@ if st.button("Predict Price"):
     
     st.write(f"### Predicted Price: {formatted_price}")
     format_mean_price=format_price_indian(mean_price_per_cent)
-    st.write(f"Mean Price per Cent for '{location}': ₹{format_mean_price:,.2f}")
+    st.write(f"Mean Price per Cent for '{location}': ₹{format_mean_price}")
     st.write(f"Number of plots available in '{location}': {plot_count}")
