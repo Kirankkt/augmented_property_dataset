@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import streamlit as st
 import joblib
+from babel.numbers import format_currency
 
 # Load the pre-trained model and feature names
 model = joblib.load("xgb_model.pkl")  # Replace with your .pkl file path
@@ -24,15 +25,9 @@ poly_feature_names = [
     'Total_Area^2', 'Total_Area Mean_Price_Per_Cent', 'Mean_Price_Per_Cent^2'
 ]
 
-# Function to format price in Indian numbering system
+# Function to format price using Babel
 def format_price_indian(price):
-    price_int = int(price)
-    if price_int >= 1_00_00_000:  # If price is in crores
-        return f"₹{price_int // 1_00_00_000} Cr {price_int % 1_00_00_000 // 1_00_000} L"
-    elif price_int >= 1_00_000:  # If price is in lakhs
-        return f"₹{price_int // 1_00_000} L {price_int % 1_00_000 // 1_000} K"
-    else:  # For smaller amounts
-        return f"₹{price_int // 1_000} K {price_int % 1_000}"
+    return format_currency(price, 'INR', locale='en_IN')
 
 # Function to predict price
 def predict_price(build_area, plot_area_cents, bedrooms, location):
